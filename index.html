@@ -1,9 +1,17 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real Life Bible Help</title>
+
 <!-- Libraries -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
-<!-- ImageKit Library (Updated) -->
+<!-- ImageKit Library -->
 <script src="https://unpkg.com/imagekitio-js/dist/imagekitio.min.js"></script>
 
 <!-- Tailwind Config for Dark Mode & Fonts -->
@@ -17,7 +25,6 @@
                     serif: ['Merriweather', 'serif'],
                 },
                 colors: {
-                    // We bind these to CSS variables so we can update them at runtime
                     brand: { 
                         50:  'var(--brand-50)', 
                         100: 'var(--brand-100)',
@@ -391,44 +398,82 @@
     const db = getFirestore(app);
     let currentUser = null;
 
-    // --- IMAGEKIT SETUP (Using Browser SDK with Auth Endpoint) ---
-    // We initialize with the public key. The upload function will fetch token/sig separately.
+    // --- IMAGEKIT SETUP ---
     const imagekit = new ImageKit({
         publicKey: IK_PUBLIC_KEY,
-        urlEndpoint: IK_ENDPOINT,
-        // We do not set authenticationEndpoint here because we will handle the fetch manually
-        // to ensure we pass the correct token structure to .upload()
+        urlEndpoint: IK_ENDPOINT
     });
+
+    // Debug Helper
+    async function debugAuth() {
+        console.log("--- Debugging ImageKit Auth ---");
+        try {
+            const res = await fetch(IK_AUTH_ENDPOINT);
+            console.log("Status:", res.status);
+            const text = await res.text();
+            console.log("Response Preview:", text.substring(0, 200));
+            try {
+                const json = JSON.parse(text);
+                console.log("Parsed JSON:", json);
+            } catch (e) {
+                console.error("JSON Parse Error:", e);
+            }
+        } catch (e) {
+            console.error("Fetch Error:", e);
+        }
+    }
+    // Expose debug function for manual calling in console
+    window.debugAuth = debugAuth;
 
     // Helper: Upload to ImageKit
     async function uploadImageKit(file, fileName) {
         try {
-            // 1. Get Auth Token
-           const res = await fetch(IK_AUTH_ENDPOINT, { cache: "no-store" });
-const text = await res.text();
-if (!res.ok) throw new Error(text);
+            // 1. Get Auth Token from Serverless Function
+            const res = await fetch(IK_AUTH_ENDPOINT, { cache: "no-store" });
+            const text = await res.text();
+            
+            if (!res.ok) {
+                throw new Error(`Auth Error ${res.status}: ${text}`);
+            }
 
-const authData = JSON.parse(text);
-authData.expire = Number(authData.expire);
+            let authData;
+            try {
+                authData = JSON.parse(text);
+            } catch (e) {
+                throw new Error("Failed to parse auth JSON: " + text.substring(0, 100));
+            }
 
-return new Promise((resolve, reject) => {
-  imagekit.upload({
-    file,
-    fileName: fileName || file.name,
-    tags: ["bible-help"],
-    token: authData.token,
-    signature: authData.signature,
-    expire: authData.expire
-  }, (err, result) => {
-    if (err) reject(err);
-    else resolve(result);
-  });
-});
+            if(!authData.token || !authData.signature || !authData.expire) {
+                throw new Error("Invalid auth data structure returned from API");
+            }
+
+            // Ensure expire is a number
+            authData.expire = Number(authData.expire);
+
+            // 2. Perform Upload
+            return new Promise((resolve, reject) => {
+                imagekit.upload({
+                    file: file,
+                    fileName: fileName || file.name,
+                    tags: ["bible-help"],
+                    token: authData.token,
+                    signature: authData.signature,
+                    expire: authData.expire
+                }, (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                });
+            });
+        } catch (err) {
+            console.error("ImageKit Upload Failed:", err);
+            throw err;
+        }
+    }
 
     // --- GLOBAL STATE ---
     let state = {
         posts: [],
-        categories: [], // Static for MVP but could be dynamic
+        categories: [], 
         settings: {}
     };
 
@@ -438,7 +483,7 @@ return new Promise((resolve, reject) => {
         {id: 'relationships', name: 'Relationships', icon: 'fa-heart'},
         {id: 'money', name: 'Money & Career', icon: 'fa-coins'}
     ];
-    // Moods are now dynamic based on what tags are used, but we keep defaults for the UI
+    
     const commonMoods = [
         'Anxious', 'Lonely', 'Heartbroken', 'Burnout', 'Angry', 'Confused'
     ];
@@ -486,6 +531,11 @@ return new Promise((resolve, reject) => {
         if(!window.location.hash || window.location.hash === '#home') renderFeed(getFilteredPosts());
         // If admin, update list
         if(currentUser) renderAdminPostList();
+        
+        // If currently viewing a post, re-render it (live updates)
+        if(window.location.hash.startsWith('#post/')) {
+            renderPost(window.location.hash.split('/')[1]);
+        }
     });
 
     // --- SETTINGS APPLICATION ---
@@ -495,7 +545,6 @@ return new Promise((resolve, reject) => {
         document.title = title;
         document.getElementById('navTitle').innerText = title;
         if(s.siteTitle && window.location.hash === '#home') {
-             // Update homepage header if visible
              const h1 = document.getElementById('homeTitle');
              h1.innerText = s.siteTitle;
              h1.classList.remove('hidden');
@@ -530,14 +579,9 @@ return new Promise((resolve, reject) => {
         // 5. Brand Color (CSS Variables)
         if(s.brandColor) {
             const hex = s.brandColor;
-            // Simple hex to variable mapping. 
-            // For a proper palette, we'd calculate lighter/darker, but for now we map 500 to main.
             document.documentElement.style.setProperty('--brand-500', hex);
-            // Approx darker/lighter (not perfect but functional without pre-processor)
             document.documentElement.style.setProperty('--brand-600', hex); 
             document.documentElement.style.setProperty('--brand-700', hex);
-            // For light backgrounds, we stick to defaults or use a very light opacity hack if needed
-            // keeping 50/100 default teal-ish is usually okay, or we could set them to white/gray
         }
 
         // 6. Background Image
@@ -589,7 +633,7 @@ return new Promise((resolve, reject) => {
             </div>
         `).join('');
 
-        // Render Moods (Use defaults + any unique ones found in posts could be added)
+        // Render Moods
         const moodContainer = document.getElementById('moodGrid');
         moodContainer.innerHTML = commonMoods.map(m => `
             <button onclick="filterFeed('mood', '${m}')" class="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-brand-500 hover:text-white transition-colors text-sm font-semibold shadow-sm">
@@ -617,7 +661,6 @@ return new Promise((resolve, reject) => {
         if(type === 'reset') activeFilter = { type: 'all', value: null };
 
         renderFeed(getFilteredPosts());
-        // Only scroll if not just loading
         if(type !== 'all') document.getElementById('postsGrid').scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 
@@ -641,7 +684,6 @@ return new Promise((resolve, reject) => {
                     <h3 class="text-xl font-bold mb-2 leading-tight">${post.title}</h3>
                     <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-grow">${post.hook || ''}</p>
                     
-                    <!-- Mood Tags Preview -->
                     <div class="flex flex-wrap gap-1 mb-3">
                         ${(post.moodTags || []).slice(0,3).map(tag => `<span class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">#${tag}</span>`).join('')}
                     </div>
@@ -701,7 +743,7 @@ return new Promise((resolve, reject) => {
             if(b.includes(id)) b = b.filter(x => x !== id);
             else b.push(id);
             localStorage.setItem('bookmarks', JSON.stringify(b));
-            renderPost(id); // re-render icon
+            renderPost(id); 
         };
 
         // Share Logic
@@ -820,18 +862,18 @@ return new Promise((resolve, reject) => {
         status.className = "text-center text-sm font-bold mt-2 text-brand-500";
         
         try {
-            const res = await uploadImageKit(file);
-            document.getElementById(targetId).value = res.url;
+            const result = await uploadImageKit(file);
+            document.getElementById(targetId).value = result.url;
             status.innerText = "Upload Complete.";
             
             // Show preview immediately
             if(targetId === 'setLogoUrl') {
                 const img = document.getElementById('previewLogo');
-                img.src = res.url;
+                img.src = result.url;
                 img.classList.remove('hidden');
             } else if (targetId === 'setBgUrl') {
                 const img = document.getElementById('previewBg');
-                img.src = res.url;
+                img.src = result.url;
                 img.classList.remove('hidden');
             }
 
@@ -872,7 +914,6 @@ return new Promise((resolve, reject) => {
 
     function renderAdminPostList() {
         const list = document.getElementById('adminPostList');
-        // sort by updatedAt desc
         const sorted = [...state.posts].sort((a,b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
         
         list.innerHTML = sorted.map(p => `
@@ -915,7 +956,6 @@ return new Promise((resolve, reject) => {
         document.getElementById('inpPublished').checked = p.published;
         document.getElementById('inpImageUrl').value = p.imageUrl || '';
         
-        // Mood Tags
         if(p.moodTags && Array.isArray(p.moodTags)) {
             document.getElementById('inpMoodTags').value = p.moodTags.join(', ');
         } else {
@@ -954,7 +994,6 @@ return new Promise((resolve, reject) => {
         e.preventDefault();
         const id = document.getElementById('editPostId').value;
         
-        // Parse mood tags
         const rawMoods = document.getElementById('inpMoodTags').value;
         const moodArray = rawMoods.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
@@ -1000,4 +1039,9 @@ return new Promise((resolve, reject) => {
         document.documentElement.classList.remove('dark');
     }
 
+    // Initialize Router
+    handleRoute();
+
 </script>
+</body>
+</html>
