@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check admin email
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == "bristyxom@gmail.com";
+    }
+
+    // Settings: Public read, Admin write
+    match /settings/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Categories & Moods: Public read, Admin write
+    match /categories/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /moods/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Posts: 
+    // - Admin can read/write everything
+    // - Public can read ONLY if published is true
+    match /posts/{document} {
+      allow read: if (resource.data.published == true) || isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
