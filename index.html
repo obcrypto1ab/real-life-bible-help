@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
 <!-- ImageKit Library (Updated) -->
-<script type="text/javascript" src="https://unpkg.com/imagekit-javascript/dist/imagekit.min.js"></script>
+<script src="https://unpkg.com/imagekitio-js/dist/imagekitio.min.js"></script>
 
 <!-- Tailwind Config for Dark Mode & Fonts -->
 <script>
@@ -404,29 +404,26 @@
     async function uploadImageKit(file, fileName) {
         try {
             // 1. Get Auth Token
-            const res = await fetch(IK_AUTH_ENDPOINT, { cache: "no-store" });
-            if (!res.ok) throw new Error("Failed to fetch auth token");
-            const authData = await res.json(); // { token, expire, signature }
+           const res = await fetch(IK_AUTH_ENDPOINT, { cache: "no-store" });
+const text = await res.text();
+if (!res.ok) throw new Error(text);
 
-            // 2. Upload using the SDK
-            return new Promise((resolve, reject) => {
-                imagekit.upload({
-                    file: file,
-                    fileName: fileName || file.name,
-                    tags: ["bible-help"],
-                    token: authData.token,
-                    signature: authData.signature,
-                    expire: authData.expire
-                }, (err, result) => {
-                    if (err) reject(err);
-                    else resolve(result);
-                });
-            });
-        } catch (error) {
-            console.error("Upload error:", error);
-            throw error;
-        }
-    }
+const authData = JSON.parse(text);
+authData.expire = Number(authData.expire);
+
+return new Promise((resolve, reject) => {
+  imagekit.upload({
+    file,
+    fileName: fileName || file.name,
+    tags: ["bible-help"],
+    token: authData.token,
+    signature: authData.signature,
+    expire: authData.expire
+  }, (err, result) => {
+    if (err) reject(err);
+    else resolve(result);
+  });
+});
 
     // --- GLOBAL STATE ---
     let state = {
