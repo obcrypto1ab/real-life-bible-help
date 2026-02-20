@@ -1,25 +1,24 @@
-const ImageKit = require("imagekit");
-
-const imagekit = new ImageKit({
-  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
-});
+import ImageKit from "imagekit";
 
 export default function handler(req, res) {
-  // CORS handling
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*'); 
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
   try {
-    const authenticationParameters = imagekit.getAuthenticationParameters();
-    res.status(200).json(authenticationParameters);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const publicKey = process.env.IMAGEKIT_PUBLIC_KEY;
+    const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+    const urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT;
+
+    if (!publicKey || !privateKey || !urlEndpoint) {
+      return res.status(500).json({
+        error: "Missing ImageKit env vars",
+        hasPublicKey: !!publicKey,
+        hasPrivateKey: !!privateKey,
+        hasUrlEndpoint: !!urlEndpoint
+      });
+    }
+
+    const imagekit = new ImageKit({ publicKey, privateKey, urlEndpoint });
+    const authParams = imagekit.getAuthenticationParameters();
+    return res.status(200).json(authParams);
+  } catch (e) {
+    return res.status(500).json({ error: "Internal Server Error", message: e.message });
   }
 }
