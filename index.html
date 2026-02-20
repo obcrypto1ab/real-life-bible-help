@@ -1,635 +1,1006 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Life Bible Help</title>
-    
-    <!-- Libraries -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/imagekit-javascript/dist/imagekit.min.js"></script>
+<!-- Libraries -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
-    <!-- Tailwind Config for Dark Mode & Fonts -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Merriweather', 'serif'],
-                    },
-                    colors: {
-                        brand: { 50: '#f0fdfa', 500: '#14b8a6', 700: '#0f766e', 900: '#134e4a' }
+<!-- ImageKit Library (Updated) -->
+<script type="text/javascript" src="https://unpkg.com/imagekit-javascript/dist/imagekit.min.js"></script>
+
+<!-- Tailwind Config for Dark Mode & Fonts -->
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                    serif: ['Merriweather', 'serif'],
+                },
+                colors: {
+                    // We bind these to CSS variables so we can update them at runtime
+                    brand: { 
+                        50:  'var(--brand-50)', 
+                        100: 'var(--brand-100)',
+                        500: 'var(--brand-500)', 
+                        600: 'var(--brand-600)',
+                        700: 'var(--brand-700)', 
+                        900: 'var(--brand-900)' 
                     }
                 }
             }
         }
-    </script>
+    }
+</script>
 
-    <!-- 3D & Utility Styles -->
-    <style>
-        .card-3d {
-            transition: all 0.3s ease;
-            transform-style: preserve-3d;
-        }
-        .card-3d:hover {
-            transform: translateY(-5px) rotateX(2deg);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .hide { display: none !important; }
-        .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid white; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Simple Rich Text Editor */
-        .editor-preview h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
-        .editor-preview h2 { font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem; }
-        .editor-preview ul { list-style-type: disc; margin-left: 1.5rem; }
-        .editor-preview p { margin-bottom: 0.75rem; }
-    </style>
+<!-- 3D & Utility Styles -->
+<style>
+    :root {
+        /* Default Brand Colors (Teal) */
+        --brand-50:  #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-500: #14b8a6;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-900: #134e4a;
+    }
+
+    .card-3d {
+        transition: all 0.3s ease;
+        transform-style: preserve-3d;
+    }
+    .card-3d:hover {
+        transform: translateY(-5px) rotateX(2deg);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .hide { display: none !important; }
+    .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid white; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Dynamic Background Overlay */
+    #bg-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: -1;
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        transition: opacity 0.5s ease;
+    }
+    #bg-overlay::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
+    }
+    .dark #bg-overlay::after {
+        background: linear-gradient(to bottom, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.98));
+    }
+</style>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-    <!-- Navbar -->
-    <nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b dark:border-gray-800">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="#home" class="text-xl font-bold tracking-tight text-brand-700 dark:text-brand-500">
-                <i class="fas fa-bible mr-2"></i>Real Life Bible Help
-            </a>
-            <div class="flex items-center space-x-4">
-                <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800">
-                    <i class="fas fa-moon dark:hidden"></i>
-                    <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
-                </button>
-                <a href="#bookmarks" class="p-2"><i class="far fa-bookmark"></i></a>
-                <a href="#admin" id="adminLink" class="hidden text-xs font-bold text-red-500 uppercase">Admin</a>
-            </div>
-        </div>
-    </nav>
+<!-- Background Layer -->
+<div id="bg-overlay"></div>
 
-    <!-- Main Content Area -->
-    <main id="app" class="max-w-6xl mx-auto px-4 py-6 min-h-screen">
-        
-        <!-- === VIEW: HOME === -->
-        <div id="view-home" class="view-section">
-            <!-- Daily Message -->
-            <div id="dailyMessage" class="mb-8 p-6 bg-gradient-to-r from-brand-500 to-brand-700 rounded-2xl text-white shadow-lg card-3d hidden">
-                <h3 class="text-xs uppercase tracking-widest opacity-80 mb-2">Daily Encouragement</h3>
-                <p id="dailyText" class="text-xl font-serif italic"></p>
-            </div>
-
-            <!-- Search -->
-            <div class="relative mb-10">
-                <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="What are you struggling with today? (e.g. anxiety, debt...)" 
-                    class="w-full pl-12 pr-4 py-3 rounded-xl border-none ring-1 ring-gray-200 dark:ring-gray-700 bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
-            </div>
-
-            <!-- Categories -->
-            <section class="mb-10">
-                <h2 class="text-lg font-bold mb-4">Choose Your Struggle</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="categoryGrid">
-                    <!-- Injected via JS -->
-                </div>
-            </section>
-
-            <!-- Moods -->
-            <section class="mb-10">
-                <h2 class="text-lg font-bold mb-4">How are you feeling?</h2>
-                <div class="flex flex-wrap gap-3" id="moodGrid">
-                    <!-- Injected via JS -->
-                </div>
-            </section>
-
-            <!-- Posts Feed -->
-            <section>
-                <h2 class="text-lg font-bold mb-4" id="feedTitle">Latest Help</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="postsGrid">
-                    <!-- Injected via JS -->
-                </div>
-            </section>
-        </div>
-
-        <!-- === VIEW: SINGLE POST === -->
-        <div id="view-post" class="view-section hide">
-            <button onclick="window.history.back()" class="mb-4 text-sm text-gray-500 hover:text-brand-500"><i class="fas fa-arrow-left mr-1"></i> Back</button>
-            <article class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-                <div id="postImage" class="h-64 w-full bg-cover bg-center bg-gray-200"></div>
-                <div class="p-6 md:p-10">
-                    <div class="flex justify-between items-start">
-                        <span id="postCategory" class="text-xs font-bold uppercase text-brand-500 tracking-wider"></span>
-                        <div class="flex space-x-3">
-                            <button id="btnBookmark" class="text-gray-400 hover:text-brand-500"><i class="far fa-bookmark fa-lg"></i></button>
-                            <button id="btnShare" class="text-gray-400 hover:text-blue-500"><i class="fas fa-share-alt fa-lg"></i></button>
-                        </div>
-                    </div>
-                    
-                    <h1 id="postTitle" class="text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-900 dark:text-white"></h1>
-                    <p id="postHook" class="text-lg text-gray-600 dark:text-gray-300 italic mb-8 border-l-4 border-brand-500 pl-4"></p>
-
-                    <!-- The Verse -->
-                    <div class="bg-brand-50 dark:bg-gray-900/50 p-6 rounded-xl mb-8 border border-brand-100 dark:border-gray-700">
-                        <p id="postVerse" class="font-serif text-xl leading-relaxed text-brand-900 dark:text-brand-100"></p>
-                    </div>
-
-                    <!-- Content -->
-                    <div class="prose dark:prose-invert max-w-none">
-                        <h3 class="text-xl font-bold mb-2">Understanding This</h3>
-                        <div id="postExplanation" class="mb-8 whitespace-pre-wrap"></div>
-
-                        <h3 class="text-xl font-bold mb-2">Practical Steps</h3>
-                        <div id="postSteps" class="mb-8 whitespace-pre-wrap"></div>
-
-                        <h3 class="text-xl font-bold mb-2">A Short Prayer</h3>
-                        <div id="postPrayer" class="italic mb-8 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg whitespace-pre-wrap"></div>
-                    </div>
-
-                    <!-- Video -->
-                    <div id="postVideo" class="mt-8 aspect-video rounded-xl overflow-hidden bg-black hidden"></div>
-                </div>
-            </article>
-        </div>
-
-        <!-- === VIEW: BOOKMARKS === -->
-        <div id="view-bookmarks" class="view-section hide">
-             <h2 class="text-2xl font-bold mb-6">Your Saved Items</h2>
-             <div id="bookmarksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-             <p id="noBookmarks" class="text-gray-500 hidden">No bookmarks yet.</p>
-        </div>
-
-        <!-- === VIEW: ADMIN === -->
-        <div id="view-admin" class="view-section hide">
-            <!-- Login -->
-            <div id="adminLogin" class="max-w-md mx-auto mt-20 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
-                <h2 class="text-2xl font-bold mb-4">Admin Access</h2>
-                <p class="mb-4 text-sm text-gray-500">Restricted to bristyxom@gmail.com</p>
-                <input type="email" id="adminEmail" placeholder="Email" class="w-full p-3 mb-3 border rounded dark:bg-gray-700">
-                <input type="password" id="adminPass" placeholder="Password" class="w-full p-3 mb-4 border rounded dark:bg-gray-700">
-                <button onclick="handleLogin()" class="w-full bg-brand-600 text-white p-3 rounded font-bold hover:bg-brand-700">Login</button>
-                <p id="loginError" class="text-red-500 text-sm mt-3"></p>
-            </div>
-
-            <!-- Dashboard -->
-            <div id="adminDashboard" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold">Dashboard</h1>
-                    <button onclick="handleLogout()" class="text-red-500 text-sm">Logout</button>
-                </div>
-
-                <!-- Tabs -->
-                <div class="flex space-x-4 border-b border-gray-200 dark:border-gray-700 mb-6">
-                    <button onclick="switchAdminTab('posts')" class="pb-2 border-b-2 border-brand-500 font-bold">Posts</button>
-                    <button onclick="switchAdminTab('settings')" class="pb-2 text-gray-500">Settings</button>
-                </div>
-
-                <!-- Posts Manager -->
-                <div id="admin-tab-posts">
-                    <button onclick="openPostModal()" class="mb-4 bg-brand-600 text-white px-4 py-2 rounded shadow hover:bg-brand-700">+ New Post</button>
-                    <div id="adminPostList" class="space-y-2"></div>
-                </div>
-
-                <!-- Settings Manager -->
-                <div id="admin-tab-settings" class="hidden">
-                    <label class="block mb-2 font-bold">Daily Message</label>
-                    <textarea id="settingDailyMsg" class="w-full p-3 border rounded dark:bg-gray-800" rows="3"></textarea>
-                    <button onclick="saveSettings()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded">Save Settings</button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Admin Post Modal -->
-    <div id="postModal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-start overflow-y-auto py-10">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-4xl p-6 rounded-xl shadow-2xl relative">
-            <button onclick="closePostModal()" class="absolute top-4 right-4 text-2xl">&times;</button>
-            <h2 class="text-xl font-bold mb-4" id="modalTitle">Edit Post</h2>
-            
-            <form id="postForm" onsubmit="handleSavePost(event)" class="space-y-4">
-                <input type="hidden" id="editPostId">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="inpTitle" placeholder="Title" required class="p-2 border rounded w-full dark:bg-gray-700">
-                    <input type="text" id="inpHook" placeholder="Short Hook" class="p-2 border rounded w-full dark:bg-gray-700">
-                </div>
-                
-                <!-- Image Upload -->
-                <div class="border p-4 rounded border-dashed border-gray-400">
-                    <label class="block text-sm font-bold mb-2">Cover Image</label>
-                    <input type="file" id="inpImageFile" accept="image/*">
-                    <input type="hidden" id="inpImageUrl">
-                    <p id="uploadStatus" class="text-sm text-brand-500 mt-1"></p>
-                    <img id="imgPreview" class="mt-2 h-32 hidden object-cover rounded">
-                </div>
-
-                <textarea id="inpVerse" placeholder="Bible Verse" class="w-full p-2 border rounded dark:bg-gray-700" rows="2"></textarea>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <textarea id="inpExplanation" placeholder="Explanation (Markdown-ish)" class="w-full p-2 border rounded dark:bg-gray-700" rows="4"></textarea>
-                    <textarea id="inpSteps" placeholder="Practical Steps" class="w-full p-2 border rounded dark:bg-gray-700" rows="4"></textarea>
-                </div>
-                
-                <textarea id="inpPrayer" placeholder="Short Prayer" class="w-full p-2 border rounded dark:bg-gray-700" rows="2"></textarea>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="inpYoutube" placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)" class="p-2 border rounded w-full dark:bg-gray-700">
-                    <select id="inpCategory" class="p-2 border rounded w-full dark:bg-gray-700"></select>
-                </div>
-
-                <div class="flex items-center space-x-2">
-                    <input type="checkbox" id="inpPublished" class="w-5 h-5">
-                    <label>Published (Visible to public)</label>
-                </div>
-
-                <button type="submit" class="w-full bg-brand-600 text-white p-3 rounded font-bold hover:bg-brand-700">Save Post</button>
-            </form>
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b dark:border-gray-800">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="#home" class="flex items-center text-xl font-bold tracking-tight text-brand-700 dark:text-brand-500">
+            <img id="navLogo" src="" class="h-8 w-8 mr-2 hidden object-contain">
+            <i id="navIcon" class="fas fa-bible mr-2"></i>
+            <span id="navTitle">Real Life Bible Help</span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+            </button>
+            <a href="#bookmarks" class="p-2 hover:text-brand-600 transition-colors"><i class="far fa-bookmark"></i></a>
+            <a href="#admin" id="adminLink" class="hidden text-xs font-bold text-red-500 uppercase border border-red-500 px-2 py-1 rounded">Admin</a>
         </div>
     </div>
+</nav>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<!-- Main Content Area -->
+<main id="app" class="max-w-6xl mx-auto px-4 py-6 min-h-screen relative z-10">
+    
+    <!-- === VIEW: HOME === -->
+    <div id="view-home" class="view-section">
+        <!-- Header / Tagline -->
+        <div class="text-center mb-8">
+            <h1 id="homeTitle" class="text-3xl font-extrabold mb-2 text-gray-900 dark:text-white hidden"></h1>
+            <p id="homeTagline" class="text-gray-500 dark:text-gray-400 font-serif italic"></p>
+        </div>
 
-        // --- CONFIGURATION (REPLACE THESE) ---
-       const firebaseConfig = {
-  apiKey: "AIzaSyDkVKP2_pyI5lPx0r9FWxQ90D4UlsHAfXA",
-  authDomain: "real-life-bible-help.firebaseapp.com",
-  projectId: "real-life-bible-help",
-  storageBucket: "real-life-bible-help.firebasestorage.app",
-  messagingSenderId: "615751219476",
-  appId: "1:615751219476:web:84aa24a4c22d48d5e4aa01"
-};
-        const ADMIN_EMAIL = "bristyxom@gmail.com";
-        const IMAGEKIT_ENDPOINT = "https://ik.imagekit.io/cgdkn8ki9"; 
+        <!-- Daily Message -->
+        <div id="dailyMessage" class="mb-8 p-6 bg-gradient-to-r from-brand-500 to-brand-700 rounded-2xl text-white shadow-lg card-3d hidden">
+            <h3 class="text-xs uppercase tracking-widest opacity-80 mb-2">Daily Encouragement</h3>
+            <p id="dailyText" class="text-xl font-serif italic"></p>
+        </div>
 
-        // --- INIT ---
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        let currentUser = null;
-        
-        // --- GLOBAL STATE ---
-        let state = {
-            posts: [],
-            categories: [],
-            moods: [],
-            settings: {}
-        };
+        <!-- Search -->
+        <div class="relative mb-10">
+            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+            <input type="text" id="searchInput" placeholder="What are you struggling with today? (e.g. anxiety, debt...)" 
+                class="w-full pl-12 pr-4 py-3 rounded-xl border-none ring-1 ring-gray-200 dark:ring-gray-700 bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+        </div>
 
-        // --- IMAGEKIT SETUP ---
-        const imagekit = new ImageKit({
-            publicKey: "public_yRB2dktvG7CXL9J/UNiO8v7Aolg=", // It's safe to expose public key
-            urlEndpoint: IMAGEKIT_ENDPOINT,
-            authenticationEndpoint: "/api/imagekit-auth"
-        });
+        <!-- Categories -->
+        <section class="mb-10">
+            <h2 class="text-lg font-bold mb-4">Choose Your Struggle</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="categoryGrid">
+                <!-- Injected via JS -->
+            </div>
+        </section>
 
-        // --- ROUTING ---
-        function handleRoute() {
-            const hash = window.location.hash || '#home';
-            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hide'));
-            
-            if (hash === '#home') {
-                document.getElementById('view-home').classList.remove('hide');
-                renderHome();
-            } else if (hash.startsWith('#post/')) {
-                const id = hash.split('/')[1];
-                document.getElementById('view-post').classList.remove('hide');
-                renderPost(id);
-            } else if (hash === '#bookmarks') {
-                document.getElementById('view-bookmarks').classList.remove('hide');
-                renderBookmarks();
-            } else if (hash === '#admin') {
-                document.getElementById('view-admin').classList.remove('hide');
-                checkAdminUI();
-            }
-            window.scrollTo(0,0);
-        }
+        <!-- Moods -->
+        <section class="mb-10">
+            <h2 class="text-lg font-bold mb-4">How are you feeling?</h2>
+            <div class="flex flex-wrap gap-3" id="moodGrid">
+                <!-- Injected via JS -->
+            </div>
+        </section>
 
-        window.addEventListener('hashchange', handleRoute);
+        <!-- Posts Feed -->
+        <section>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold" id="feedTitle">Latest Help</h2>
+                <button onclick="filterFeed('reset')" id="resetFilterBtn" class="text-sm text-brand-600 font-bold hidden">Show All</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="postsGrid">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+    </div>
 
-        // --- DATA LISTENERS ---
-        // 1. Settings
-        onSnapshot(doc(db, "settings", "main"), (doc) => {
-            if(doc.exists()) {
-                state.settings = doc.data();
-                if(state.settings.dailyMessage) {
-                    document.getElementById('dailyText').innerText = state.settings.dailyMessage;
-                    document.getElementById('dailyMessage').classList.remove('hidden');
-                    document.getElementById('settingDailyMsg').value = state.settings.dailyMessage;
-                }
-            }
-        });
-
-        // 2. Categories & Moods (Static for MVP, assume they exist)
-        // Hardcoding standard ones if DB is empty for demo, but better to fetch
-        const defaultCats = [
-            {id: 'mental', name: 'Mental Health', icon: 'fa-brain'},
-            {id: 'relationships', name: 'Relationships', icon: 'fa-heart'},
-            {id: 'money', name: 'Money & Career', icon: 'fa-coins'}
-        ];
-        const defaultMoods = [
-            {name: 'Anxious', color: 'bg-yellow-100'}, 
-            {name: 'Lonely', color: 'bg-blue-100'}, 
-            {name: 'Heartbroken', color: 'bg-red-100'},
-            {name: 'Burnout', color: 'bg-gray-200'}
-        ];
-
-        // 3. Posts
-        onSnapshot(collection(db, "posts"), (snapshot) => {
-            state.posts = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            renderHome(); // Re-render feed
-            if(currentUser) renderAdminPostList();
-        });
-
-        // --- RENDERING ---
-        function renderHome() {
-            // Categories
-            const catContainer = document.getElementById('categoryGrid');
-            catContainer.innerHTML = defaultCats.map(c => `
-                <div onclick="filterFeed('category', '${c.id}')" class="card-3d bg-white dark:bg-gray-800 p-6 rounded-xl shadow cursor-pointer border-l-4 border-brand-500 hover:bg-brand-50 dark:hover:bg-gray-700">
-                    <i class="fas ${c.icon} text-3xl text-brand-500 mb-3"></i>
-                    <h3 class="font-bold text-lg">${c.name}</h3>
+    <!-- === VIEW: SINGLE POST === -->
+    <div id="view-post" class="view-section hide">
+        <button onclick="window.history.back()" class="mb-4 text-sm text-gray-500 hover:text-brand-500"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+        <article class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+            <div id="postImage" class="h-64 w-full bg-cover bg-center bg-gray-200"></div>
+            <div class="p-6 md:p-10">
+                <div class="flex justify-between items-start">
+                    <span id="postCategory" class="text-xs font-bold uppercase text-brand-500 tracking-wider"></span>
+                    <div class="flex space-x-3">
+                        <button id="btnBookmark" class="text-gray-400 hover:text-brand-500 transition-colors"><i class="far fa-bookmark fa-lg"></i></button>
+                        <button id="btnShare" class="text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-share-alt fa-lg"></i></button>
+                    </div>
                 </div>
-            `).join('');
+                
+                <h1 id="postTitle" class="text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-900 dark:text-white"></h1>
+                <p id="postHook" class="text-lg text-gray-600 dark:text-gray-300 italic mb-8 border-l-4 border-brand-500 pl-4"></p>
+                
+                <!-- Mood Tags Display -->
+                <div id="postMoods" class="flex flex-wrap gap-2 mb-6"></div>
 
-            // Moods
-            const moodContainer = document.getElementById('moodGrid');
-            moodContainer.innerHTML = defaultMoods.map(m => `
-                <button onclick="filterFeed('search', '${m.name}')" class="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-brand-500 hover:text-white transition-colors text-sm font-semibold">
-                    ${m.name}
-                </button>
-            `).join('');
+                <!-- The Verse -->
+                <div class="bg-brand-50 dark:bg-gray-900/50 p-6 rounded-xl mb-8 border border-brand-100 dark:border-gray-700">
+                    <p id="postVerse" class="font-serif text-xl leading-relaxed text-brand-900 dark:text-brand-100"></p>
+                </div>
 
-            // Feed (Default: Show all published)
-            renderFeed(state.posts.filter(p => p.published));
-        }
+                <!-- Content -->
+                <div class="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200">
+                    <h3 class="text-xl font-bold mb-2">Understanding This</h3>
+                    <div id="postExplanation" class="mb-8 whitespace-pre-wrap"></div>
 
-        window.filterFeed = (type, value) => {
-            let filtered = state.posts.filter(p => p.published);
-            if(type === 'category') {
-                filtered = filtered.filter(p => p.category === value);
-                document.getElementById('feedTitle').innerText = value === 'mental' ? 'Mental Health' : value === 'relationships' ? 'Relationships' : 'Money & Career';
-            } else if (type === 'search') {
-                const term = value.toLowerCase();
-                filtered = filtered.filter(p => 
-                    p.title.toLowerCase().includes(term) || 
-                    (p.hook && p.hook.toLowerCase().includes(term))
-                );
-                document.getElementById('feedTitle').innerText = `Results for "${value}"`;
-            }
-            renderFeed(filtered);
-            document.getElementById('postsGrid').scrollIntoView({behavior: 'smooth'});
-        }
+                    <h3 class="text-xl font-bold mb-2">Practical Steps</h3>
+                    <div id="postSteps" class="mb-8 whitespace-pre-wrap"></div>
 
-        // Search Input
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            if(e.target.value.length > 2) filterFeed('search', e.target.value);
-        });
+                    <h3 class="text-xl font-bold mb-2">A Short Prayer</h3>
+                    <div id="postPrayer" class="italic mb-8 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg whitespace-pre-wrap"></div>
+                </div>
 
-        function renderFeed(posts) {
-            const grid = document.getElementById('postsGrid');
-            if(posts.length === 0) {
-                grid.innerHTML = '<p class="col-span-3 text-center text-gray-500 py-10">No posts found.</p>';
-                return;
-            }
-            grid.innerHTML = posts.map(post => `
-                <div class="card-3d bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg flex flex-col h-full cursor-pointer group" onclick="location.hash='#post/${post.id}'">
-                    <div class="h-48 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('${post.imageUrl || 'https://via.placeholder.com/400'}')"></div>
-                    <div class="p-5 flex-grow flex flex-col">
-                        <span class="text-xs font-bold text-brand-500 uppercase mb-2">${post.category || 'General'}</span>
-                        <h3 class="text-xl font-bold mb-2 leading-tight">${post.title}</h3>
-                        <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-grow">${post.hook || ''}</p>
-                        <div class="flex items-center text-brand-600 font-semibold text-sm">
-                            Read More <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                <!-- Video -->
+                <div id="postVideo" class="mt-8 aspect-video rounded-xl overflow-hidden bg-black hidden"></div>
+            </div>
+        </article>
+    </div>
+
+    <!-- === VIEW: BOOKMARKS === -->
+    <div id="view-bookmarks" class="view-section hide">
+         <h2 class="text-2xl font-bold mb-6">Your Saved Items</h2>
+         <div id="bookmarksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+         <p id="noBookmarks" class="text-gray-500 hidden">No bookmarks yet.</p>
+    </div>
+
+    <!-- === VIEW: ADMIN === -->
+    <div id="view-admin" class="view-section hide">
+        <!-- Login -->
+        <div id="adminLogin" class="max-w-md mx-auto mt-20 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
+            <h2 class="text-2xl font-bold mb-4">Admin Access</h2>
+            <p class="mb-4 text-sm text-gray-500">Restricted to bristyxom@gmail.com</p>
+            <input type="email" id="adminEmail" placeholder="Email" class="w-full p-3 mb-3 border rounded dark:bg-gray-700 focus:border-brand-500 outline-none">
+            <input type="password" id="adminPass" placeholder="Password" class="w-full p-3 mb-4 border rounded dark:bg-gray-700 focus:border-brand-500 outline-none">
+            <button onclick="handleLogin()" class="w-full bg-brand-600 text-white p-3 rounded font-bold hover:bg-brand-700">Login</button>
+            <p id="loginError" class="text-red-500 text-sm mt-3"></p>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="adminDashboard" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold">Dashboard</h1>
+                <button onclick="handleLogout()" class="text-red-500 text-sm font-bold">LOGOUT</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex space-x-4 border-b border-gray-200 dark:border-gray-700 mb-6">
+                <button onclick="switchAdminTab('posts')" id="tab-btn-posts" class="pb-2 border-b-2 border-brand-500 font-bold">Posts</button>
+                <button onclick="switchAdminTab('settings')" id="tab-btn-settings" class="pb-2 text-gray-500 hover:text-gray-700">Settings</button>
+            </div>
+
+            <!-- Posts Manager -->
+            <div id="admin-tab-posts">
+                <button onclick="openPostModal()" class="mb-4 bg-brand-600 text-white px-4 py-2 rounded shadow hover:bg-brand-700">+ New Post</button>
+                <div id="adminPostList" class="space-y-2"></div>
+            </div>
+
+            <!-- Settings Manager -->
+            <div id="admin-tab-settings" class="hidden space-y-6">
+                
+                <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+                    <h3 class="font-bold text-lg mb-4">General Settings</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Site Title</label>
+                            <input type="text" id="setSiteTitle" class="w-full p-2 border rounded dark:bg-gray-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Tagline</label>
+                            <input type="text" id="setTagline" class="w-full p-2 border rounded dark:bg-gray-700">
                         </div>
                     </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">Brand Color (Hex)</label>
+                        <div class="flex gap-2">
+                            <input type="color" id="setBrandColorPicker" class="h-10 w-10 p-0 border-0" onchange="document.getElementById('setBrandColor').value = this.value">
+                            <input type="text" id="setBrandColor" class="w-full p-2 border rounded dark:bg-gray-700" placeholder="#14b8a6">
+                        </div>
+                    </div>
+
+                    <div class="mb-4 flex items-center gap-2">
+                         <input type="checkbox" id="setDarkModeDefault" class="w-5 h-5 accent-brand-500">
+                         <label class="font-bold">Dark Mode Default</label>
+                    </div>
                 </div>
-            `).join('');
-        }
 
-        function renderPost(id) {
-            const post = state.posts.find(p => p.id === id);
-            if(!post) return;
+                <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+                    <h3 class="font-bold text-lg mb-4">Images</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">Logo URL</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="setLogoUrl" class="w-full p-2 border rounded dark:bg-gray-700">
+                            <label class="cursor-pointer bg-gray-200 dark:bg-gray-600 px-3 py-2 rounded hover:bg-gray-300">
+                                <i class="fas fa-upload"></i>
+                                <input type="file" hidden onchange="uploadAsset(this, 'setLogoUrl')">
+                            </label>
+                        </div>
+                        <img id="previewLogo" class="h-10 mt-2 object-contain hidden">
+                    </div>
 
-            document.getElementById('postTitle').innerText = post.title;
-            document.getElementById('postHook').innerText = post.hook;
-            document.getElementById('postVerse').innerText = `"${post.verse}"`;
-            document.getElementById('postExplanation').innerText = post.explanation;
-            document.getElementById('postSteps').innerText = post.steps;
-            document.getElementById('postPrayer').innerText = post.prayer;
-            document.getElementById('postCategory').innerText = post.category || 'Guidance';
-            
-            if(post.imageUrl) {
-                document.getElementById('postImage').style.backgroundImage = `url('${post.imageUrl}')`;
-            }
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">Background Image URL</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="setBgUrl" class="w-full p-2 border rounded dark:bg-gray-700">
+                            <label class="cursor-pointer bg-gray-200 dark:bg-gray-600 px-3 py-2 rounded hover:bg-gray-300">
+                                <i class="fas fa-upload"></i>
+                                <input type="file" hidden onchange="uploadAsset(this, 'setBgUrl')">
+                            </label>
+                        </div>
+                        <img id="previewBg" class="h-20 w-full mt-2 object-cover rounded hidden">
+                    </div>
+                </div>
 
-            const vidContainer = document.getElementById('postVideo');
-            if(post.youtubeId) {
-                vidContainer.classList.remove('hidden');
-                vidContainer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${post.youtubeId}" frameborder="0" allowfullscreen></iframe>`;
-            } else {
-                vidContainer.classList.add('hidden');
-            }
+                <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+                    <h3 class="font-bold text-lg mb-4">Daily Message</h3>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" id="setDailyMsgEnabled" class="w-5 h-5 accent-brand-500">
+                        <label>Enable Daily Message</label>
+                    </div>
+                    <textarea id="setDailyMsg" class="w-full p-3 border rounded dark:bg-gray-700" rows="3"></textarea>
+                </div>
 
-            // Bookmark Logic
-            const btnBookmark = document.getElementById('btnBookmark');
-            const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-            const isSaved = bookmarks.includes(id);
-            btnBookmark.innerHTML = isSaved ? '<i class="fas fa-bookmark fa-lg text-brand-500"></i>' : '<i class="far fa-bookmark fa-lg"></i>';
-            
-            btnBookmark.onclick = (e) => {
-                e.stopPropagation();
-                let b = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-                if(b.includes(id)) b = b.filter(x => x !== id);
-                else b.push(id);
-                localStorage.setItem('bookmarks', JSON.stringify(b));
-                renderPost(id); // re-render icon
-            };
+                <button onclick="handleSaveSettings()" class="w-full bg-brand-600 text-white p-4 rounded font-bold hover:bg-brand-700 text-lg shadow-lg">
+                    Save All Settings
+                </button>
+                <p id="settingsStatus" class="text-center text-sm font-bold mt-2 h-5"></p>
+            </div>
+        </div>
+    </div>
+</main>
 
-            // Share Logic
-            document.getElementById('btnShare').onclick = () => {
-                const url = window.location.href;
-                navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
-            };
-        }
-
-        function renderBookmarks() {
-            const ids = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-            const savedPosts = state.posts.filter(p => ids.includes(p.id));
-            const grid = document.getElementById('bookmarksGrid');
-            
-            if(savedPosts.length === 0) {
-                document.getElementById('noBookmarks').classList.remove('hidden');
-                grid.innerHTML = '';
-            } else {
-                document.getElementById('noBookmarks').classList.add('hidden');
-                grid.innerHTML = savedPosts.map(post => `
-                     <div class="bg-white dark:bg-gray-800 p-4 rounded shadow cursor-pointer" onclick="location.hash='#post/${post.id}'">
-                        <h4 class="font-bold">${post.title}</h4>
-                     </div>
-                `).join('');
-            }
-        }
-
-        // --- ADMIN LOGIC ---
+<!-- Admin Post Modal -->
+<div id="postModal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-start overflow-y-auto py-10">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-4xl p-6 rounded-xl shadow-2xl relative">
+        <button onclick="closePostModal()" class="absolute top-4 right-4 text-2xl text-gray-500 hover:text-red-500">&times;</button>
+        <h2 class="text-xl font-bold mb-4" id="modalTitle">Edit Post</h2>
         
-        // UI Check
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user && user.email === ADMIN_EMAIL) {
-                document.getElementById('adminLink').classList.remove('hidden');
-                if(window.location.hash === '#admin') checkAdminUI();
-            } else {
-                document.getElementById('adminLink').classList.add('hidden');
-            }
-            handleRoute(); // Run initial route check
-        });
+        <form id="postForm" onsubmit="handleSavePost(event)" class="space-y-4">
+            <input type="hidden" id="editPostId">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" id="inpTitle" placeholder="Title" required class="p-2 border rounded w-full dark:bg-gray-700">
+                <input type="text" id="inpHook" placeholder="Short Hook" class="p-2 border rounded w-full dark:bg-gray-700">
+            </div>
+            
+            <!-- Image Upload -->
+            <div class="border p-4 rounded border-dashed border-gray-400">
+                <label class="block text-sm font-bold mb-2">Cover Image</label>
+                <input type="file" id="inpImageFile" accept="image/*">
+                <input type="hidden" id="inpImageUrl">
+                <p id="uploadStatus" class="text-sm text-brand-500 mt-1"></p>
+                <img id="imgPreview" class="mt-2 h-32 hidden object-cover rounded">
+            </div>
 
-        function checkAdminUI() {
-            if (currentUser && currentUser.email === ADMIN_EMAIL) {
-                document.getElementById('adminLogin').classList.add('hidden');
-                document.getElementById('adminDashboard').classList.remove('hidden');
-                renderAdminPostList();
-            } else {
-                document.getElementById('adminLogin').classList.remove('hidden');
-                document.getElementById('adminDashboard').classList.add('hidden');
-            }
+            <textarea id="inpVerse" placeholder="Bible Verse" class="w-full p-2 border rounded dark:bg-gray-700" rows="2"></textarea>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <textarea id="inpExplanation" placeholder="Explanation (Markdown-ish)" class="w-full p-2 border rounded dark:bg-gray-700" rows="4"></textarea>
+                <textarea id="inpSteps" placeholder="Practical Steps" class="w-full p-2 border rounded dark:bg-gray-700" rows="4"></textarea>
+            </div>
+            
+            <textarea id="inpPrayer" placeholder="Short Prayer" class="w-full p-2 border rounded dark:bg-gray-700" rows="2"></textarea>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" id="inpYoutube" placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)" class="p-2 border rounded w-full dark:bg-gray-700">
+                <div>
+                    <label class="text-xs font-bold text-gray-500">Category</label>
+                    <select id="inpCategory" class="p-2 border rounded w-full dark:bg-gray-700"></select>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-gray-500">Mood Tags (comma separated)</label>
+                <input type="text" id="inpMoodTags" placeholder="e.g. anxious, lonely, stressed" class="p-2 border rounded w-full dark:bg-gray-700">
+            </div>
+
+            <div class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                <input type="checkbox" id="inpPublished" class="w-5 h-5 accent-brand-500">
+                <label class="font-bold">Published (Visible to public)</label>
+            </div>
+
+            <button type="submit" class="w-full bg-brand-600 text-white p-3 rounded font-bold hover:bg-brand-700">Save Post</button>
+        </form>
+    </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // --- CONFIGURATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDkVKP2_pyI5lPx0r9FWxQ90D4UlsHAfXA",
+        authDomain: "real-life-bible-help.firebaseapp.com",
+        projectId: "real-life-bible-help",
+        storageBucket: "real-life-bible-help.firebasestorage.app",
+        messagingSenderId: "615751219476",
+        appId: "1:615751219476:web:84aa24a4c22d48d5e4aa01"
+    };
+    const ADMIN_EMAIL = "bristyxom@gmail.com";
+    const IK_PUBLIC_KEY = "public_yRB2dktvG7CXL9J/UNiO8v7Aolg=";
+    const IK_ENDPOINT = "https://ik.imagekit.io/cgdkn8ki9";
+    const IK_AUTH_ENDPOINT = "/api/imagekit-auth";
+
+    // --- INIT ---
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let currentUser = null;
+
+    // --- IMAGEKIT SETUP (Using Browser SDK with Auth Endpoint) ---
+    // We initialize with the public key. The upload function will fetch token/sig separately.
+    const imagekit = new ImageKit({
+        publicKey: IK_PUBLIC_KEY,
+        urlEndpoint: IK_ENDPOINT,
+        // We do not set authenticationEndpoint here because we will handle the fetch manually
+        // to ensure we pass the correct token structure to .upload()
+    });
+
+    // Helper: Upload to ImageKit
+    async function uploadImageKit(file, fileName) {
+        try {
+            // 1. Get Auth Token
+            const res = await fetch(IK_AUTH_ENDPOINT, { cache: "no-store" });
+            if (!res.ok) throw new Error("Failed to fetch auth token");
+            const authData = await res.json(); // { token, expire, signature }
+
+            // 2. Upload using the SDK
+            return new Promise((resolve, reject) => {
+                imagekit.upload({
+                    file: file,
+                    fileName: fileName || file.name,
+                    tags: ["bible-help"],
+                    token: authData.token,
+                    signature: authData.signature,
+                    expire: authData.expire
+                }, (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                });
+            });
+        } catch (error) {
+            console.error("Upload error:", error);
+            throw error;
+        }
+    }
+
+    // --- GLOBAL STATE ---
+    let state = {
+        posts: [],
+        categories: [], // Static for MVP but could be dynamic
+        settings: {}
+    };
+
+    // Static Data
+    const defaultCats = [
+        {id: 'mental', name: 'Mental Health', icon: 'fa-brain'},
+        {id: 'relationships', name: 'Relationships', icon: 'fa-heart'},
+        {id: 'money', name: 'Money & Career', icon: 'fa-coins'}
+    ];
+    // Moods are now dynamic based on what tags are used, but we keep defaults for the UI
+    const commonMoods = [
+        'Anxious', 'Lonely', 'Heartbroken', 'Burnout', 'Angry', 'Confused'
+    ];
+
+    // --- ROUTING ---
+    function handleRoute() {
+        const hash = window.location.hash || '#home';
+        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hide'));
+        
+        if (hash === '#home') {
+            document.getElementById('view-home').classList.remove('hide');
+            renderHome();
+        } else if (hash.startsWith('#post/')) {
+            const id = hash.split('/')[1];
+            document.getElementById('view-post').classList.remove('hide');
+            renderPost(id);
+        } else if (hash === '#bookmarks') {
+            document.getElementById('view-bookmarks').classList.remove('hide');
+            renderBookmarks();
+        } else if (hash === '#admin') {
+            document.getElementById('view-admin').classList.remove('hide');
+            checkAdminUI();
+        }
+        window.scrollTo(0,0);
+    }
+    window.addEventListener('hashchange', handleRoute);
+
+    // --- DATA LISTENERS ---
+    
+    // 1. Settings Listener
+    onSnapshot(doc(db, "settings", "main"), (docSnap) => {
+        if(docSnap.exists()) {
+            state.settings = docSnap.data();
+        } else {
+            state.settings = {}; // defaults
+        }
+        applySettings(state.settings);
+        if(window.location.hash === '#admin') renderSettingsForm();
+    });
+
+    // 2. Posts Listener
+    onSnapshot(collection(db, "posts"), (snapshot) => {
+        state.posts = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        // If on home, re-render feed
+        if(!window.location.hash || window.location.hash === '#home') renderFeed(getFilteredPosts());
+        // If admin, update list
+        if(currentUser) renderAdminPostList();
+    });
+
+    // --- SETTINGS APPLICATION ---
+    function applySettings(s) {
+        // 1. Branding (Site Title)
+        const title = s.siteTitle || "Real Life Bible Help";
+        document.title = title;
+        document.getElementById('navTitle').innerText = title;
+        if(s.siteTitle && window.location.hash === '#home') {
+             // Update homepage header if visible
+             const h1 = document.getElementById('homeTitle');
+             h1.innerText = s.siteTitle;
+             h1.classList.remove('hidden');
+        }
+        
+        // 2. Tagline
+        if(s.tagline) {
+            document.getElementById('homeTagline').innerText = s.tagline;
         }
 
-        window.handleLogin = async () => {
-            const email = document.getElementById('adminEmail').value;
-            const pass = document.getElementById('adminPass').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                if(auth.currentUser.email !== ADMIN_EMAIL) {
-                    throw new Error("Unauthorized");
-                }
-                checkAdminUI();
-            } catch (e) {
-                document.getElementById('loginError').innerText = e.message;
-            }
+        // 3. Logo
+        const navLogo = document.getElementById('navLogo');
+        const navIcon = document.getElementById('navIcon');
+        if(s.logoUrl) {
+            navLogo.src = s.logoUrl;
+            navLogo.classList.remove('hidden');
+            navIcon.classList.add('hidden');
+        } else {
+            navLogo.classList.add('hidden');
+            navIcon.classList.remove('hidden');
+        }
+
+        // 4. Daily Message
+        const dm = document.getElementById('dailyMessage');
+        if(s.dailyMessageEnabled && s.dailyMessage) {
+            document.getElementById('dailyText').innerText = s.dailyMessage;
+            dm.classList.remove('hidden');
+        } else {
+            dm.classList.add('hidden');
+        }
+
+        // 5. Brand Color (CSS Variables)
+        if(s.brandColor) {
+            const hex = s.brandColor;
+            // Simple hex to variable mapping. 
+            // For a proper palette, we'd calculate lighter/darker, but for now we map 500 to main.
+            document.documentElement.style.setProperty('--brand-500', hex);
+            // Approx darker/lighter (not perfect but functional without pre-processor)
+            document.documentElement.style.setProperty('--brand-600', hex); 
+            document.documentElement.style.setProperty('--brand-700', hex);
+            // For light backgrounds, we stick to defaults or use a very light opacity hack if needed
+            // keeping 50/100 default teal-ish is usually okay, or we could set them to white/gray
+        }
+
+        // 6. Background Image
+        const bg = document.getElementById('bg-overlay');
+        if(s.backgroundImageUrl) {
+            bg.style.backgroundImage = `url('${s.backgroundImageUrl}')`;
+        } else {
+            bg.style.backgroundImage = 'none';
+        }
+
+        // 7. Dark Mode Default (only on first load if no user pref)
+        if (localStorage.getItem('theme') === null && s.darkModeDefault) {
+            document.documentElement.classList.add('dark');
+        }
+    }
+
+    // --- RENDERING PUBLIC UI ---
+
+    let activeFilter = { type: 'all', value: null };
+
+    function getFilteredPosts() {
+        let filtered = state.posts.filter(p => p.published);
+        
+        if (activeFilter.type === 'category') {
+            filtered = filtered.filter(p => p.category === activeFilter.value);
+        } else if (activeFilter.type === 'search') {
+            const term = activeFilter.value.toLowerCase();
+            filtered = filtered.filter(p => 
+                p.title.toLowerCase().includes(term) || 
+                (p.hook && p.hook.toLowerCase().includes(term)) ||
+                (p.moodTags && p.moodTags.some(t => t.toLowerCase().includes(term)))
+            );
+        } else if (activeFilter.type === 'mood') {
+            const mood = activeFilter.value.toLowerCase();
+            filtered = filtered.filter(p => 
+                p.moodTags && p.moodTags.some(t => t.toLowerCase() === mood)
+            );
+        }
+        return filtered;
+    }
+
+    function renderHome() {
+        // Render Categories
+        const catContainer = document.getElementById('categoryGrid');
+        catContainer.innerHTML = defaultCats.map(c => `
+            <div onclick="filterFeed('category', '${c.id}')" class="card-3d bg-white/90 dark:bg-gray-800/90 backdrop-blur p-6 rounded-xl shadow cursor-pointer border-l-4 border-brand-500 hover:bg-brand-50 dark:hover:bg-gray-700 transition-colors">
+                <i class="fas ${c.icon} text-3xl text-brand-500 mb-3"></i>
+                <h3 class="font-bold text-lg">${c.name}</h3>
+            </div>
+        `).join('');
+
+        // Render Moods (Use defaults + any unique ones found in posts could be added)
+        const moodContainer = document.getElementById('moodGrid');
+        moodContainer.innerHTML = commonMoods.map(m => `
+            <button onclick="filterFeed('mood', '${m}')" class="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-brand-500 hover:text-white transition-colors text-sm font-semibold shadow-sm">
+                ${m}
+            </button>
+        `).join('');
+
+        renderFeed(getFilteredPosts());
+    }
+
+    window.filterFeed = (type, value) => {
+        activeFilter = { type, value };
+        
+        const titles = {
+            'category': value === 'mental' ? 'Mental Health' : value === 'relationships' ? 'Relationships' : value === 'money' ? 'Money & Career' : 'Category: ' + value,
+            'search': `Search: "${value}"`,
+            'mood': `Feeling: ${value}`,
+            'reset': 'Latest Help',
+            'all': 'Latest Help'
         };
+        
+        document.getElementById('feedTitle').innerText = titles[type] || 'Latest Help';
+        document.getElementById('resetFilterBtn').classList.toggle('hidden', type === 'all' || type === 'reset');
+        
+        if(type === 'reset') activeFilter = { type: 'all', value: null };
 
-        window.handleLogout = () => signOut(auth).then(() => location.hash = '#home');
+        renderFeed(getFilteredPosts());
+        // Only scroll if not just loading
+        if(type !== 'all') document.getElementById('postsGrid').scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
 
-        window.switchAdminTab = (tab) => {
-            document.getElementById('admin-tab-posts').classList.add('hidden');
-            document.getElementById('admin-tab-settings').classList.add('hidden');
-            document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
-        };
+    // Search Input
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        if(e.target.value.length > 2) filterFeed('search', e.target.value);
+        if(e.target.value.length === 0) filterFeed('reset');
+    });
 
-        // Post CRUD
-        function renderAdminPostList() {
-            const list = document.getElementById('adminPostList');
-            list.innerHTML = state.posts.map(p => `
-                <div class="flex justify-between items-center bg-white dark:bg-gray-700 p-3 rounded shadow">
-                    <div>
-                        <span class="${p.published ? 'text-green-500' : 'text-red-500'} font-bold text-xs mr-2">●</span>
-                        <span class="font-bold">${p.title}</span>
+    function renderFeed(posts) {
+        const grid = document.getElementById('postsGrid');
+        if(posts.length === 0) {
+            grid.innerHTML = '<div class="col-span-full text-center py-10 bg-white/50 dark:bg-gray-800/50 rounded-xl"><p class="text-gray-500 font-bold">No posts found.</p></div>';
+            return;
+        }
+        grid.innerHTML = posts.map(post => `
+            <div class="card-3d bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg flex flex-col h-full cursor-pointer group" onclick="location.hash='#post/${post.id}'">
+                <div class="h-48 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('${post.imageUrl || 'https://via.placeholder.com/400?text=Bible+Help'}')"></div>
+                <div class="p-5 flex-grow flex flex-col">
+                    <span class="text-xs font-bold text-brand-500 uppercase mb-2 tracking-wide">${defaultCats.find(c=>c.id===post.category)?.name || post.category || 'General'}</span>
+                    <h3 class="text-xl font-bold mb-2 leading-tight">${post.title}</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-grow">${post.hook || ''}</p>
+                    
+                    <!-- Mood Tags Preview -->
+                    <div class="flex flex-wrap gap-1 mb-3">
+                        ${(post.moodTags || []).slice(0,3).map(tag => `<span class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">#${tag}</span>`).join('')}
                     </div>
-                    <div>
-                        <button onclick="editPost('${p.id}')" class="text-blue-400 mr-2">Edit</button>
+
+                    <div class="flex items-center text-brand-600 font-semibold text-sm mt-auto">
+                        Read More <i class="fas fa-arrow-right ml-2 text-xs"></i>
                     </div>
                 </div>
-            `).join('');
+            </div>
+        `).join('');
+    }
+
+    function renderPost(id) {
+        const post = state.posts.find(p => p.id === id);
+        if(!post) return;
+
+        document.getElementById('postTitle').innerText = post.title;
+        document.getElementById('postHook').innerText = post.hook;
+        document.getElementById('postVerse').innerText = `"${post.verse}"`;
+        document.getElementById('postExplanation').innerText = post.explanation;
+        document.getElementById('postSteps').innerText = post.steps;
+        document.getElementById('postPrayer').innerText = post.prayer;
+        
+        const catName = defaultCats.find(c=>c.id === post.category)?.name || 'Guidance';
+        document.getElementById('postCategory').innerText = catName;
+        
+        // Moods
+        const moodContainer = document.getElementById('postMoods');
+        if(post.moodTags && post.moodTags.length > 0) {
+            moodContainer.innerHTML = post.moodTags.map(t => `<span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300">#${t}</span>`).join('');
+        } else {
+            moodContainer.innerHTML = '';
         }
 
-        window.openPostModal = () => {
-            document.getElementById('postForm').reset();
-            document.getElementById('editPostId').value = '';
-            document.getElementById('modalTitle').innerText = 'New Post';
-            document.getElementById('inpCategory').innerHTML = defaultCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            document.getElementById('postModal').classList.remove('hidden');
+        if(post.imageUrl) {
+            document.getElementById('postImage').style.backgroundImage = `url('${post.imageUrl}')`;
+        }
+
+        const vidContainer = document.getElementById('postVideo');
+        if(post.youtubeId) {
+            vidContainer.classList.remove('hidden');
+            vidContainer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${post.youtubeId}" frameborder="0" allowfullscreen></iframe>`;
+        } else {
+            vidContainer.classList.add('hidden');
+            vidContainer.innerHTML = '';
+        }
+
+        // Bookmark Logic
+        const btnBookmark = document.getElementById('btnBookmark');
+        const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+        const isSaved = bookmarks.includes(id);
+        btnBookmark.innerHTML = isSaved ? '<i class="fas fa-bookmark fa-lg text-brand-500"></i>' : '<i class="far fa-bookmark fa-lg"></i>';
+        
+        btnBookmark.onclick = (e) => {
+            e.stopPropagation();
+            let b = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+            if(b.includes(id)) b = b.filter(x => x !== id);
+            else b.push(id);
+            localStorage.setItem('bookmarks', JSON.stringify(b));
+            renderPost(id); // re-render icon
         };
 
-        window.closePostModal = () => document.getElementById('postModal').classList.add('hidden');
+        // Share Logic
+        document.getElementById('btnShare').onclick = () => {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => alert('Link copied to clipboard!'));
+        };
+    }
 
-        window.editPost = (id) => {
-            openPostModal();
-            const p = state.posts.find(x => x.id === id);
-            document.getElementById('editPostId').value = p.id;
-            document.getElementById('modalTitle').innerText = 'Edit Post';
-            document.getElementById('inpTitle').value = p.title;
-            document.getElementById('inpHook').value = p.hook;
-            document.getElementById('inpVerse').value = p.verse;
-            document.getElementById('inpExplanation').value = p.explanation;
-            document.getElementById('inpSteps').value = p.steps;
-            document.getElementById('inpPrayer').value = p.prayer;
-            document.getElementById('inpYoutube').value = p.youtubeId || '';
-            document.getElementById('inpCategory').value = p.category;
-            document.getElementById('inpPublished').checked = p.published;
-            document.getElementById('inpImageUrl').value = p.imageUrl || '';
-            if(p.imageUrl) {
-                const img = document.getElementById('imgPreview');
-                img.src = p.imageUrl;
-                img.classList.remove('hidden');
+    function renderBookmarks() {
+        const ids = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+        const savedPosts = state.posts.filter(p => ids.includes(p.id));
+        const grid = document.getElementById('bookmarksGrid');
+        
+        if(savedPosts.length === 0) {
+            document.getElementById('noBookmarks').classList.remove('hidden');
+            grid.innerHTML = '';
+        } else {
+            document.getElementById('noBookmarks').classList.add('hidden');
+            grid.innerHTML = savedPosts.map(post => `
+                 <div class="bg-white dark:bg-gray-800 p-4 rounded shadow cursor-pointer border-l-4 border-brand-500 hover:shadow-lg transition-shadow" onclick="location.hash='#post/${post.id}'">
+                    <h4 class="font-bold text-lg">${post.title}</h4>
+                    <p class="text-xs text-gray-500 mt-1">${post.category || 'General'}</p>
+                 </div>
+            `).join('');
+        }
+    }
+
+    // --- ADMIN LOGIC ---
+    
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user && user.email === ADMIN_EMAIL) {
+            document.getElementById('adminLink').classList.remove('hidden');
+            if(window.location.hash === '#admin') checkAdminUI();
+        } else {
+            document.getElementById('adminLink').classList.add('hidden');
+        }
+    });
+
+    function checkAdminUI() {
+        if (currentUser && currentUser.email === ADMIN_EMAIL) {
+            document.getElementById('adminLogin').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            renderAdminPostList();
+            renderSettingsForm();
+        } else {
+            document.getElementById('adminLogin').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+        }
+    }
+
+    window.handleLogin = async () => {
+        const email = document.getElementById('adminEmail').value;
+        const pass = document.getElementById('adminPass').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+            if(auth.currentUser.email !== ADMIN_EMAIL) {
+                throw new Error("Unauthorized Access");
             }
-        };
+            checkAdminUI();
+        } catch (e) {
+            document.getElementById('loginError').innerText = e.message;
+        }
+    };
 
-        // Image Upload Logic
-        document.getElementById('inpImageFile').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+    window.handleLogout = () => signOut(auth).then(() => {
+        currentUser = null;
+        location.hash = '#home';
+    });
 
-            const status = document.getElementById('uploadStatus');
-            status.innerText = "Uploading...";
+    window.switchAdminTab = (tab) => {
+        document.getElementById('admin-tab-posts').classList.add('hidden');
+        document.getElementById('admin-tab-settings').classList.add('hidden');
+        
+        document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+        
+        // UI Toggle
+        document.getElementById('tab-btn-posts').classList.remove('border-b-2', 'border-brand-500', 'text-black', 'dark:text-white');
+        document.getElementById('tab-btn-posts').classList.add('text-gray-500');
+        document.getElementById('tab-btn-settings').classList.remove('border-b-2', 'border-brand-500', 'text-black', 'dark:text-white');
+        document.getElementById('tab-btn-settings').classList.add('text-gray-500');
+
+        const activeBtn = document.getElementById(`tab-btn-${tab}`);
+        activeBtn.classList.remove('text-gray-500');
+        activeBtn.classList.add('border-b-2', 'border-brand-500');
+    };
+
+    // --- ADMIN: SETTINGS ---
+
+    function renderSettingsForm() {
+        const s = state.settings;
+        document.getElementById('setSiteTitle').value = s.siteTitle || "";
+        document.getElementById('setTagline').value = s.tagline || "";
+        document.getElementById('setBrandColor').value = s.brandColor || "#14b8a6";
+        document.getElementById('setBrandColorPicker').value = s.brandColor || "#14b8a6";
+        document.getElementById('setDarkModeDefault').checked = !!s.darkModeDefault;
+        document.getElementById('setLogoUrl').value = s.logoUrl || "";
+        document.getElementById('setBgUrl').value = s.backgroundImageUrl || "";
+        document.getElementById('setDailyMsgEnabled').checked = !!s.dailyMessageEnabled;
+        document.getElementById('setDailyMsg').value = s.dailyMessage || "";
+
+        // Previews
+        const logoImg = document.getElementById('previewLogo');
+        if(s.logoUrl) { logoImg.src = s.logoUrl; logoImg.classList.remove('hidden'); }
+        
+        const bgImg = document.getElementById('previewBg');
+        if(s.backgroundImageUrl) { bgImg.src = s.backgroundImageUrl; bgImg.classList.remove('hidden'); }
+    }
+
+    window.uploadAsset = async (input, targetId) => {
+        const file = input.files[0];
+        if(!file) return;
+        const status = document.getElementById('settingsStatus');
+        status.innerText = "Uploading...";
+        status.className = "text-center text-sm font-bold mt-2 text-brand-500";
+        
+        try {
+            const res = await uploadImageKit(file);
+            document.getElementById(targetId).value = res.url;
+            status.innerText = "Upload Complete.";
             
-            try {
-                const result = await imagekit.upload({
-                    file: file,
-                    fileName: "post_cover_" + Date.now(),
-                    tags: ["post"]
-                });
-                
-                document.getElementById('inpImageUrl').value = result.url;
-                const img = document.getElementById('imgPreview');
-                img.src = result.url;
+            // Show preview immediately
+            if(targetId === 'setLogoUrl') {
+                const img = document.getElementById('previewLogo');
+                img.src = res.url;
                 img.classList.remove('hidden');
-                status.innerText = "Upload Complete!";
-            } catch (err) {
-                console.error(err);
-                status.innerText = "Error uploading: " + err.message;
+            } else if (targetId === 'setBgUrl') {
+                const img = document.getElementById('previewBg');
+                img.src = res.url;
+                img.classList.remove('hidden');
             }
-        });
 
-        window.handleSavePost = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('editPostId').value;
-            const data = {
-                title: document.getElementById('inpTitle').value,
-                hook: document.getElementById('inpHook').value,
-                verse: document.getElementById('inpVerse').value,
-                explanation: document.getElementById('inpExplanation').value,
-                steps: document.getElementById('inpSteps').value,
-                prayer: document.getElementById('inpPrayer').value,
-                youtubeId: document.getElementById('inpYoutube').value,
-                category: document.getElementById('inpCategory').value,
-                published: document.getElementById('inpPublished').checked,
-                imageUrl: document.getElementById('inpImageUrl').value,
-                updatedAt: serverTimestamp()
-            };
+        } catch(e) {
+            status.innerText = "Error: " + e.message;
+            status.className = "text-center text-sm font-bold mt-2 text-red-500";
+        }
+    };
 
-            if(id) {
-                await updateDoc(doc(db, "posts", id), data);
-            } else {
-                data.createdAt = serverTimestamp();
-                await addDoc(collection(db, "posts"), data);
-            }
-            closePostModal();
+    window.handleSaveSettings = async () => {
+        const status = document.getElementById('settingsStatus');
+        status.innerText = "Saving...";
+        status.className = "text-center text-sm font-bold mt-2 text-gray-500";
+
+        const data = {
+            siteTitle: document.getElementById('setSiteTitle').value,
+            tagline: document.getElementById('setTagline').value,
+            brandColor: document.getElementById('setBrandColor').value,
+            darkModeDefault: document.getElementById('setDarkModeDefault').checked,
+            logoUrl: document.getElementById('setLogoUrl').value,
+            backgroundImageUrl: document.getElementById('setBgUrl').value,
+            dailyMessageEnabled: document.getElementById('setDailyMsgEnabled').checked,
+            dailyMessage: document.getElementById('setDailyMsg').value
         };
 
-        window.saveSettings = async () => {
-            const msg = document.getElementById('settingDailyMsg').value;
-            await setDoc(doc(db, "settings", "main"), { dailyMessage: msg }, { merge: true });
-            alert('Settings Saved');
+        try {
+            await setDoc(doc(db, "settings", "main"), data, { merge: true });
+            status.innerText = "Settings Saved!";
+            status.className = "text-center text-sm font-bold mt-2 text-green-500";
+            setTimeout(() => status.innerText = "", 3000);
+        } catch(e) {
+            status.innerText = "Error Saving: " + e.message;
+            status.className = "text-center text-sm font-bold mt-2 text-red-500";
+        }
+    };
+
+    // --- ADMIN: POSTS ---
+
+    function renderAdminPostList() {
+        const list = document.getElementById('adminPostList');
+        // sort by updatedAt desc
+        const sorted = [...state.posts].sort((a,b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+        
+        list.innerHTML = sorted.map(p => `
+            <div class="flex justify-between items-center bg-white dark:bg-gray-700 p-3 rounded shadow border-l-4 ${p.published ? 'border-green-500' : 'border-red-500'}">
+                <div>
+                    <span class="font-bold text-sm block">${p.title}</span>
+                    <span class="text-xs text-gray-500 uppercase">${p.category}</span>
+                </div>
+                <div>
+                    <button onclick="editPost('${p.id}')" class="text-blue-500 font-bold text-sm hover:underline">Edit</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.openPostModal = () => {
+        document.getElementById('postForm').reset();
+        document.getElementById('editPostId').value = '';
+        document.getElementById('modalTitle').innerText = 'New Post';
+        document.getElementById('inpCategory').innerHTML = defaultCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        document.getElementById('imgPreview').classList.add('hidden');
+        document.getElementById('postModal').classList.remove('hidden');
+    };
+
+    window.closePostModal = () => document.getElementById('postModal').classList.add('hidden');
+
+    window.editPost = (id) => {
+        openPostModal();
+        const p = state.posts.find(x => x.id === id);
+        document.getElementById('editPostId').value = p.id;
+        document.getElementById('modalTitle').innerText = 'Edit Post';
+        document.getElementById('inpTitle').value = p.title;
+        document.getElementById('inpHook').value = p.hook;
+        document.getElementById('inpVerse').value = p.verse;
+        document.getElementById('inpExplanation').value = p.explanation;
+        document.getElementById('inpSteps').value = p.steps;
+        document.getElementById('inpPrayer').value = p.prayer;
+        document.getElementById('inpYoutube').value = p.youtubeId || '';
+        document.getElementById('inpCategory').value = p.category;
+        document.getElementById('inpPublished').checked = p.published;
+        document.getElementById('inpImageUrl').value = p.imageUrl || '';
+        
+        // Mood Tags
+        if(p.moodTags && Array.isArray(p.moodTags)) {
+            document.getElementById('inpMoodTags').value = p.moodTags.join(', ');
+        } else {
+            document.getElementById('inpMoodTags').value = '';
+        }
+
+        if(p.imageUrl) {
+            const img = document.getElementById('imgPreview');
+            img.src = p.imageUrl;
+            img.classList.remove('hidden');
+        }
+    };
+
+    // Image Upload Logic for Post
+    document.getElementById('inpImageFile').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const status = document.getElementById('uploadStatus');
+        status.innerText = "Uploading...";
+        
+        try {
+            const result = await uploadImageKit(file, "post_cover_" + Date.now());
+            document.getElementById('inpImageUrl').value = result.url;
+            const img = document.getElementById('imgPreview');
+            img.src = result.url;
+            img.classList.remove('hidden');
+            status.innerText = "Upload Complete!";
+        } catch (err) {
+            console.error(err);
+            status.innerText = "Error uploading: " + err.message;
+        }
+    });
+
+    window.handleSavePost = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editPostId').value;
+        
+        // Parse mood tags
+        const rawMoods = document.getElementById('inpMoodTags').value;
+        const moodArray = rawMoods.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+        const data = {
+            title: document.getElementById('inpTitle').value,
+            hook: document.getElementById('inpHook').value,
+            verse: document.getElementById('inpVerse').value,
+            explanation: document.getElementById('inpExplanation').value,
+            steps: document.getElementById('inpSteps').value,
+            prayer: document.getElementById('inpPrayer').value,
+            youtubeId: document.getElementById('inpYoutube').value,
+            category: document.getElementById('inpCategory').value,
+            published: document.getElementById('inpPublished').checked,
+            imageUrl: document.getElementById('inpImageUrl').value,
+            moodTags: moodArray,
+            updatedAt: serverTimestamp()
         };
 
-        // Dark Mode
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-        });
+        if(id) {
+            await updateDoc(doc(db, "posts", id), data);
+        } else {
+            data.createdAt = serverTimestamp();
+            await addDoc(collection(db, "posts"), data);
+        }
+        closePostModal();
+    };
 
-    </script>
-</body>
-</html>
+    // Dark Mode Toggle Logic
+    document.getElementById('themeToggle').addEventListener('click', () => {
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+
+    // Init Theme check
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+
+</script>
